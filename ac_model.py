@@ -206,36 +206,15 @@ class Critic(object):
         self.eval_inputs = tf.placeholder(tf.uint8, shape=(59,255,3), name="eval_input")
         self.q_target = tf.placeholder(tf.uint8, name="Q_target")
 
-        conv_eval_1 = __conv_block(self.inputs, filter=16, kernel=(3,3), train_conv_layers)
-        conv_eval_2 = __conv_block(conv_eval_1, filter=32, kernel=(3,3), train_conv_layers)
-        conv_eval_3 = __conv_block(conv_eval_2, filter=32, kernel=(3,3), train_conv_layers)
-        conv_eval_4 = __conv_block(conv_eval_3, filter=32, kernel=(3,3), train_conv_layers)
-        flatten = tf.layers.flatten(conv_eval_4)
         self.q_eval = tf.layers.dense(
             units=6,
-            inputs=flatten,
+            inputs=eval_inputs,
             kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
             bias_initializer=tf.constant_initializer(0.1),  # biases
             name="output"
         )
         self.td_error = tf.reduce_mean(tf.squared_difference(self.q_target, self.q_eval))
         self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
-
-
-        # ------------------ build target_net ------------------
-        self.target_inputs = tf.placeholder(tf.uint8, shape=(59,255,3), name="target_input")
-        conv_target_1 = __conv_block(self.inputs, filter=16, kernel=(3,3), False)
-        conv_target_2 = __conv_block(conv_target_1, filter=32, kernel=(3,3), False)
-        conv_target_3 = __conv_block(conv_target_2, filter=32, kernel=(3,3), False)
-        conv_target_4 = __conv_block(conv_target_3, filter=32, kernel=(3,3), False)
-        flatten = tf.layers.flatten(conv_target_4)
-        self.q_next = tf.layers.dense(
-            inputs=flatten, 
-            units=6, 
-            kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
-            bias_initializer=tf.constant_initializer(0.1),  # biases
-            name="output"
-        )
 
 
 # Policy Gradient
