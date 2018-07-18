@@ -243,7 +243,16 @@ class Actor(object):
     def __init(self, weights, session, train_conv_layers):
         self.sess = session
 
-    def learn(self):
+    def learn(self, td_error,):
+        q_value, q_next = self.sess.run([self.q_eval, self.q_next],
+                    feed_dict={
+                        self.eval_inputs: batches,
+                        self.q_target: q_target})
+
+        error, _ = self.sess.run([self.train_op, self.loss], 
+                    feed_dict={
+                        self.eval_inputs: batches,
+                        self.q_target: q_target})
 
     def choose_action(self, observation):
         action = self.sess.run(self.eval_net_output, feed_dict={self.eval_inputs: observation})
