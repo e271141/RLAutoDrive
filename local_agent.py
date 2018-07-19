@@ -477,6 +477,15 @@ class LocalAgent():
         buffer.append(item)
         return buffer
 
+    # Adds a set of examples to the replay memory
+    def __add_to_replay_memory(self, field_name, data):
+        if field_name not in self.__experiences:
+            self.__experiences[field_name] = data
+        else:
+            self.__experiences[field_name] += data
+            start_index = max(0, len(self.__experiences[field_name]) - self.__replay_memory_size)
+            self.__experiences[field_name] = self.__experiences[field_name][start_index:]
+
     # Set vehicle contral signal
     def __set_vehicle_control(self, steering, throttle, brake):
     	self.__car_controls.steering = steering
