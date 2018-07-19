@@ -146,6 +146,7 @@ class LocalAgent():
         sampled_experiences['rewards'] = []
         sampled_experiences['predicted_rewards'] = []
         sampled_experiences['is_not_terminal'] = []
+        sampled_experiences['speed'] = []
 
         # Compute the surprise factor, which is the difference between the predicted an the actual Q value for each state.
         # We can use that to weight examples so that we are more likely to train on examples that the model got wrong.
@@ -173,6 +174,7 @@ class LocalAgent():
             sampled_experiences['rewards'] += [experiences['rewards'][i] for i in idx_set]
             sampled_experiences['predicted_rewards'] += [experiences['predicted_rewards'][i] for i in idx_set]
             sampled_experiences['is_not_terminal'] += [experiences['is_not_terminal'][i] for i in idx_set]
+            sampled_experiences['speed'] += [experiences['speed'][i] for i in idx_set]
             
         return sampled_experiences
 
@@ -244,6 +246,7 @@ class LocalAgent():
         post_states = []
         rewards = []
         predicted_rewards = []
+        speed = []
         car_state = self.__car_client.getCarState()
 
         start_time = datetime.datetime.utcnow()
@@ -305,6 +308,7 @@ class LocalAgent():
                 rewards.append(reward)
                 predicted_rewards.append(predicted_reward)
                 actions.append(next_state)
+                speed.append(car_state.speed)
 
         # Only the last state is a terminal state.
         is_not_terminal = [1 for i in range(0, len(actions)-1, 1)]
@@ -317,6 +321,7 @@ class LocalAgent():
         self.__add_to_replay_memory('rewards', rewards)
         self.__add_to_replay_memory('predicted_rewards', predicted_rewards)
         self.__add_to_replay_memory('is_not_terminal', is_not_terminal)
+        self.__add_to_replay_memory('speed', speed)
 
         print('Percent random actions: {0}'.format(num_random / max(1, len(actions))))
         print('Num total actions: {0}'.format(len(actions)))
