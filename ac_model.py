@@ -10,11 +10,11 @@ import threading
 # Otherwise, AirSim will sometimes refuse to launch, as it will be unable to 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
+# A wrapper class for the DQN model
+class ACModel():
 session = tf.Session(config=config)
 K.set_session(session)
 
-# A wrapper class for the DQN model
-class ACModel():
     def __init__(self, weights_path, train_conv_layers):
         self.__angle_values = [-1, -0.5, 0, 0.5, 1]
 
