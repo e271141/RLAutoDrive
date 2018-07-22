@@ -182,8 +182,8 @@ class ACModel():
     def get_random_state(self):
         return np.random.randint(low=0, high=(self.__nb_actions) - 1)
 
-# A DQN Network
-class Critic(object):
+# Policy-Gradient
+class Actor(object):
     def __init(self, weights, session, learning_rate, train_conv_layers):
         self.sess = session
         self.lr = learning_rate
@@ -217,8 +217,8 @@ class Critic(object):
         self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
 
 
-# Policy Gradient
-class Actor(object):
+# DQN
+class Critic(object):
     def __init(self, weights, session, train_conv_layers):
         self.sess = session
 
