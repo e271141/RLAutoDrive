@@ -10,11 +10,11 @@ import threading
 # Otherwise, AirSim will sometimes refuse to launch, as it will be unable to 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-# A wrapper class for the DQN model
-class ACModel():
 session = tf.Session(config=config)
 K.set_session(session)
 
+# A wrapper class for the DQN model
+class ACModel():
     def __init__(self, weights_path, train_conv_layers):
         self.__angle_values = [-1, -0.5, 0, 0.5, 1]
 
@@ -136,22 +136,9 @@ K.set_session(session)
 
         # Perform a training iteration.
         with self.__action_context.as_default():
-            original_weights = [np.array(w, copy=True) for w in self.__action_model.get_weights()]
-            self.__action_model.fit([pre_states], labels, epochs=1, batch_size=32, verbose=1)
-            
-            # Compute the gradients
-            new_weights = self.__action_model.get_weights()
-            gradients = []
-            dx = 0
-            for i in range(0, len(original_weights), 1):
-                gradients.append(new_weights[i] - original_weights[i])
-                dx += np.sum(np.sum(np.abs(new_weights[i]-original_weights[i])))
-            print('change in weights from training iteration: {0}'.format(dx))
+            self.actor.learn([pre_states], labels, epochs=1, batch_size=32, verbose=1)
         
         print('END GET GRADIENT UPDATE DEBUG')
-
-        # Numpy arrays are not JSON serializable by default
-        return [w.tolist() for w in gradients]
 
     # Performs a state prediction given the model input
     def predict_state(self, observation):
@@ -222,7 +209,7 @@ class Critic(object):
     def __init(self, weights, session, train_conv_layers):
         self.sess = session
 
-    def learn(self, td_error,):
+    def learn(self, pre_states, post_states):
         q_value, q_next = self.sess.run([self.q_eval, self.q_next],
                     feed_dict={
                         self.eval_inputs: batches,

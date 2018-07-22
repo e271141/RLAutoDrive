@@ -339,7 +339,7 @@ class LocalAgent():
     def __publish_batch_and_update_model(self, batches, batches_count):
         # Train and get the gradients
         print('Publishing epoch data and getting latest model from parameter server...')
-        gradients = self.__model.get_gradient_update_from_batches(batches)
+        self.__model.get_gradient_update_from_batches(batches)
         
         # Post the data to the trainer node
         if (self.__num_batches_run > self.__batch_update_frequency + self.__last_checkpoint_batch_count):
