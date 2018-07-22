@@ -114,25 +114,7 @@ class ACModel():
         pre_states = pre_states[:, 3, :, :, :]
         post_states = post_states[:, 3, :, :, :]
         
-        print('START GET GRADIENT UPDATE DEBUG')
-        
-        # We only have labels for the action that the agent actually took.
-        # To prevent the model from training the other actions, figure out what the model currently predicts for each input.
-        # Then, the gradients with respect to those outputs will always be zero.
-        with self.__action_context.as_default():
-            labels = self.__action_model.predict([pre_states], batch_size=32)
-        
-        # Find out what the target model will predict for each post-decision state.
-        with self.__target_context.as_default():
-            q_futures = self.__target_model.predict([post_states], batch_size=32)
-
-        # Apply the Bellman equation
-        q_futures_max = np.max(q_futures, axis=1)
-        q_labels = (q_futures_max * is_not_terminal * self.__gamma) + rewards
-        
-        # Update the label only for the actions that were actually taken.
-        for i in range(0, len(actions), 1):
-            labels[i][actions[i]] = q_labels[i]
+        labels = self.critic.learn()
 
         # Perform a training iteration.
         with self.__action_context.as_default():
@@ -175,6 +157,10 @@ class Actor(object):
         self.sess = session
         self.lr = learning_rate
 
+    def choose_action(self, observation):
+        action = self.sess.run(self.eval_net_output, feed_dict={self.eval_inputs: observation})
+        return action
+
     def learn(self, batches, q_target):
         q_value, q_next = self.sess.run([self.q_eval, self.q_next],
                     feed_dict={
@@ -210,6 +196,26 @@ class Critic(object):
         self.sess = session
 
     def learn(self, pre_states, post_states):
+
+        # We only have labels for the action that the agent actually took.
+        # To prevent the model from training the other actions, figure out what the model currently predicts for each input.
+        # Then, the gradients with respect to those outputs will always be zero.
+        with self.__action_context.as_default():
+            labels = self.__action_model.predict([pre_states], batch_size=32)
+        
+        # Find out what the target model will predict for each post-decision state.
+        with self.__target_context.as_default():
+            q_futures = self.__target_model.predict([post_states], batch_size=32)
+
+        # Apply the Bellman equation
+        q_futures_max = np.max(q_futures, axis=1)
+        q_labels = (q_futures_max * is_not_terminal * self.__gamma) + rewards
+        
+        # Update the label only for the actions that were actually taken.
+        for i in range(0, len(actions), 1):
+            labels[i][actions[i]] = q_labels[i]
+
+
         q_value, q_next = self.sess.run([self.q_eval, self.q_next],
                     feed_dict={
                         self.eval_inputs: batches,
@@ -219,10 +225,6 @@ class Critic(object):
                     feed_dict={
                         self.eval_inputs: batches,
                         self.q_target: q_target})
-
-    def choose_action(self, observation):
-        action = self.sess.run(self.eval_net_output, feed_dict={self.eval_inputs: observation})
-        return action
 
     def __bulid_net(self):
         
