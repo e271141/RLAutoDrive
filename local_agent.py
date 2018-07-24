@@ -345,11 +345,7 @@ class LocalAgent():
         if (self.__num_batches_run > self.__batch_update_frequency + self.__last_checkpoint_batch_count):
             self.__model.update_critic()
             
-            checkpoint = {}
-            checkpoint['model'] = self.__model.to_packet(get_target=True)
-            with open(file_name, 'w') as f:
-                print('Checkpointing to {0}'.format(file_name))
-                f.write(checkpoint_str)
+            # ************ Save checkpoint ***********
                 
 
     # Computes the reward functinon based on the car position.

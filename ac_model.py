@@ -69,31 +69,6 @@ class ACModel():
                 packet['target_model'] = [w.tolist() for w in self.__target_model.get_weights()]
 
         return packet
-
-    # Updates the model with the supplied gradients
-    # This is used by the trainer to accept a training iteration update from the agent
-    def update_with_gradient(self, gradients, should_update_critic):
-        with self.__action_context.as_default():
-            action_weights = self.__action_model.get_weights()
-            if (len(action_weights) != len(gradients)):
-                raise ValueError('len of action_weights is {0}, but len gradients is {1}'.format(len(action_weights), len(gradients)))
-            
-            print('UDPATE GRADIENT DEBUG START')
-            
-            dx = 0
-            for i in range(0, len(action_weights), 1):
-                action_weights[i] += gradients[i]
-                dx += np.sum(np.sum(np.abs(gradients[i])))
-            print('Moved weights {0}'.format(dx))
-            self.__action_model.set_weights(action_weights)
-            self.__action_context = tf.get_default_graph()
-
-            if (should_update_critic):
-                with self.__target_context.as_default():
-                    print('Updating critic')
-                    self.__target_model.set_weights([np.array(w, copy=True) for w in action_weights])
-            
-            print('UPDATE GRADIENT DEBUG END')
             
     def update_critic(self):
         with self.__target_context.as_default():
@@ -254,7 +229,7 @@ class Critic(object):
         conv_target_3 = __conv_block(conv_target_2, filter=32, kernel=(3,3), False)
         conv_target_4 = __conv_block(conv_target_3, filter=32, kernel=(3,3), False)
         flatten = tf.layers.flatten(conv_target_4)
-        self.target_net_output = tf.layers.dense(
+        self.target_net_output = tf.layers.dense(   
             inputs=flatten, 
             units=6, 
             kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
