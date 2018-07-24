@@ -48,7 +48,7 @@ class ACModel():
 
     # A helper function to read in the model from a JSON packet.
     # This is used both to read the file from disk and from a network packet
-    def from_packet(self, packet):
+    def  (self, packet):
         with self.__action_context.as_default():
             self.__action_model.set_weights([np.array(w) for w in packet['action_model']])
             self.__action_context = tf.get_default_graph()
@@ -250,8 +250,6 @@ class Critic(object):
                 bias_initializer=tf.constant_initializer(0.1),  # biases
                 name="output"
             )
-
-
 
 # An block of layer with:
 # convolution, batch_normalization, relu activation
