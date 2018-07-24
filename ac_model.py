@@ -169,6 +169,36 @@ class Actor(object):
 class Critic(object):
     def __init(self, weights, session, train_conv_layers):
         self.sess = session
+        self.s_dim = state_dim
+        self.a_dim = action_dim
+        self.lr = learning_rate
+        self.gamma = gamma
+        self.replacement = replacement
+
+        with tf.variable_scope('Critic'):
+            # Build evaluation net
+            self.act = action
+            self.q = self.__bulid_net(scope='eval_net', trainable=True)
+
+            # Build target net
+            self.q_ = self.__bulid_net(scope='target_net', trainable=False)
+
+            self.e_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval_net')
+            self.t_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target_net')
+
+        with tf.variable_scope('target_q'):
+            self.target_q = Reward + self.gamma*self.q_
+
+        with tf.variable_scope('TD_error'):
+            self.loss = tf.reduce_mean(tf.squared_difference(self.target_q, self.q))
+
+        with tf.variable_scope('C_train'):
+            self.train_op = tf.train.AdamOptimizer(self.lr).minimize(self.loss)
+
+        with tf.variable_scope('a_grad'):
+            self.a_grads = tf.gradients(self.q, a)[0]   # tensor of gradients of each sample (None, a_dim)
+
+        self.replacement = [tf.assign(t, e) for t, e in zip(self.t_params, self.e_params)]
 
     def learn(self, pre_states, post_states):
 
@@ -201,41 +231,26 @@ class Critic(object):
                         self.eval_inputs: batches,
                         self.q_target: q_target})
 
-    def __bulid_net(self):
+    def __bulid_net(self, scope, trainable):
+
+        with tf.variable_scope(scope):
         
-        # ------------------ build evaluate_net ------------------
-        self.eval_inputs = tf.placeholder(tf.uint8, shape=(59,255,3), name="eval_input")
-        self.q_target = tf.placeholder(tf.uint8, name="Q_target")
+            self.eval_inputs = tf.placeholder(tf.uint8, shape=(59,255,3), name="eval_input")
+            self.q_target = tf.placeholder(tf.uint8, name="Q_target")
 
-        conv_eval_1 = __conv_block(self.inputs, filter=16, kernel=(3,3), train_conv_layers)
-        conv_eval_2 = __conv_block(conv_eval_1, filter=32, kernel=(3,3), train_conv_layers)
-        conv_eval_3 = __conv_block(conv_eval_2, filter=32, kernel=(3,3), train_conv_layers)
-        conv_eval_4 = __conv_block(conv_eval_3, filter=32, kernel=(3,3), train_conv_layers)
-        flatten = tf.layers.flatten(conv_eval_4)
-        self.eval_net_output = tf.layers.dense(
-            units=6,
-            inputs=flatten, 
-            kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
-            bias_initializer=tf.constant_initializer(0.1),  # biases
-            name="output"
-        )
-        self.loss = tf.reduce_mean(tf.squared_difference(self.q_target, self.eval_net_output))
-        self.train_op = tf.train.RMSPropOptimizer(self.lr).minimize(self.loss)
+            conv_eval_1 = __conv_block(self.inputs, filter=16, kernel=(3,3), train_conv_layers)
+            conv_eval_2 = __conv_block(conv_eval_1, filter=32, kernel=(3,3), train_conv_layers)
+            conv_eval_3 = __conv_block(conv_eval_2, filter=32, kernel=(3,3), train_conv_layers)
+            conv_eval_4 = __conv_block(conv_eval_3, filter=32, kernel=(3,3), train_conv_layers)
+            flatten = tf.layers.flatten(conv_eval_4)
+            self.eval_net_output = tf.layers.dense(
+                units=6,
+                inputs=flatten, 
+                kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
+                bias_initializer=tf.constant_initializer(0.1),  # biases
+                name="output"
+            )
 
-        # ------------------ build target_net ------------------
-        self.target_inputs = tf.placeholder(tf.uint8, shape=(59,255,3), name="target_input")
-        conv_target_1 = __conv_block(self.inputs, filter=16, kernel=(3,3), False)
-        conv_target_2 = __conv_block(conv_target_1, filter=32, kernel=(3,3), False)
-        conv_target_3 = __conv_block(conv_target_2, filter=32, kernel=(3,3), False)
-        conv_target_4 = __conv_block(conv_target_3, filter=32, kernel=(3,3), False)
-        flatten = tf.layers.flatten(conv_target_4)
-        self.target_net_output = tf.layers.dense(   
-            inputs=flatten, 
-            units=6, 
-            kernel_initializer=tf.random_normal_initializer(0., .1),  # weights
-            bias_initializer=tf.constant_initializer(0.1),  # biases
-            name="output"
-        )
 
 
 # An block of layer with:
