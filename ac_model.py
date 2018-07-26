@@ -45,30 +45,6 @@ class ACModel():
 
         self.__target_context = tf.get_default_graph()
         self.__model_lock = threading.Lock()
-
-    # A helper function to read in the model from a JSON packet.
-    # This is used both to read the file from disk and from a network packet
-    def  (self, packet):
-        with self.__action_context.as_default():
-            self.__action_model.set_weights([np.array(w) for w in packet['action_model']])
-            self.__action_context = tf.get_default_graph()
-        if 'target_model' in packet:
-            with self.__target_context.as_default():
-                self.__target_model.set_weights([np.array(w) for w in packet['target_model']])
-                self.__target_context = tf.get_default_graph()
-
-    # A helper function to write the model to a JSON packet.
-    # This is used to send the model across the network from the trainer to the agent
-    def to_packet(self, get_target = True):
-        packet = {}
-        with self.__action_context.as_default():
-            packet['action_model'] = [w.tolist() for w in self.__action_model.get_weights()]
-            self.__action_context = tf.get_default_graph()
-        if get_target:
-            with self.__target_context.as_default():
-                packet['target_model'] = [w.tolist() for w in self.__target_model.get_weights()]
-
-        return packet
             
     def update_critic(self):
         with self.__target_context.as_default():
@@ -250,6 +226,8 @@ class Critic(object):
                 bias_initializer=tf.constant_initializer(0.1),  # biases
                 name="output"
             )
+
+
 
 # An block of layer with:
 # convolution, batch_normalization, relu activation
